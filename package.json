@@ -1,0 +1,29 @@
+{
+  "name": "al-burhan-maamulaat",
+  "version": "3.0.0",
+  "private": true,
+  "description": "Al-Burhan Ma'amulaat offline mobile app",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "assets:generate": "npx capacitor-assets generate",
+    "cap:sync": "npm run build && npx cap sync",
+    "android": "npm run cap:sync && npx cap open android",
+    "ios": "npm run cap:sync && npx cap open ios"
+  },
+  "dependencies": {
+    "@capacitor-community/sqlite": "^7.0.0",
+    "@capacitor/android": "^7.0.0",
+    "@capacitor/clipboard": "^7.0.0",
+    "@capacitor/core": "^7.0.0",
+    "@capacitor/ios": "^7.0.0",
+    "@capacitor/local-notifications": "^7.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^7.0.0",
+    "typescript": "^5.0.0",
+    "vite": "^7.0.0"
+  }
+}

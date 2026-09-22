@@ -1,0 +1,55 @@
+PODS:
+  - Capacitor (7.6.9):
+    - CapacitorCordova
+  - CapacitorClipboard (7.0.4):
+    - Capacitor
+  - CapacitorCommunitySqlite (7.0.3):
+    - Capacitor
+    - SQLCipher
+    - ZIPFoundation
+  - CapacitorCordova (7.6.9)
+  - CapacitorLocalNotifications (7.0.7):
+    - Capacitor
+  - SQLCipher (4.10.0):
+    - SQLCipher/standard (= 4.10.0)
+  - SQLCipher/common (4.10.0)
+  - SQLCipher/standard (4.10.0):
+    - SQLCipher/common
+  - ZIPFoundation (0.9.20)
+
+DEPENDENCIES:
+  - "Capacitor (from `../../node_modules/@capacitor/ios`)"
+  - "CapacitorClipboard (from `../../node_modules/@capacitor/clipboard`)"
+  - "CapacitorCommunitySqlite (from `../../node_modules/@capacitor-community/sqlite`)"
+  - "CapacitorCordova (from `../../node_modules/@capacitor/ios`)"
+  - "CapacitorLocalNotifications (from `../../node_modules/@capacitor/local-notifications`)"
+
+SPEC REPOS:
+  trunk:
+    - SQLCipher
+    - ZIPFoundation
+
+EXTERNAL SOURCES:
+  Capacitor:
+    :path: "../../node_modules/@capacitor/ios"
+  CapacitorClipboard:
+    :path: "../../node_modules/@capacitor/clipboard"
+  CapacitorCommunitySqlite:
+    :path: "../../node_modules/@capacitor-community/sqlite"
+  CapacitorCordova:
+    :path: "../../node_modules/@capacitor/ios"
+  CapacitorLocalNotifications:
+    :path: "../../node_modules/@capacitor/local-notifications"
+
+SPEC CHECKSUMS:
+  Capacitor: 46067d1c8df89760dbed78780d436327d588c726
+  CapacitorClipboard: d1f123674cf413125db816a45e8f70e8770972fc
+  CapacitorCommunitySqlite: 4813d82ad33001e612a39d313cb5d28066cbafda
+  CapacitorCordova: 2080fc0d6bfbc9dcc0e6d88e77fa624190d343ca
+  CapacitorLocalNotifications: 71124afe526ac00585314bff34651bd023f86e37
+  SQLCipher: eb79c64049cb002b4e9fcb30edb7979bf4706dfc
+  ZIPFoundation: dfd3d681c4053ff7e2f7350bc4e53b5dba3f5351
+
+PODFILE CHECKSUM: 5e1a2851604c265d009ede3d74961b9f2d356f8a
+
+COCOAPODS: 1.17.0

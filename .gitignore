@@ -1,0 +1,12 @@
+.bruin.yml
+node_modules/
+dist/
+.DS_Store
+
+# Capacitor generated native build output
+android/.gradle/
+android/build/
+android/app/build/
+android/capacitor-cordova-android-plugins/build/
+ios/App/Pods/
+ios/App/build/

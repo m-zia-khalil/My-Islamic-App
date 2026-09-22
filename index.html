@@ -575,9 +575,30 @@
 
 <div class="toast" id="toast"></div>
 
-<script>
+<script type="module">
 "use strict";
 /* ================= Al-Burhan Ma'amulaat v2 — offline, bilingual ================= */
+
+import { Capacitor } from "@capacitor/core";
+import { CapacitorSQLite, SQLiteConnection } from "@capacitor-community/sqlite";
+import { LocalNotifications } from "@capacitor/local-notifications";
+import { Clipboard } from "@capacitor/clipboard";
+
+const sqlite = new SQLiteConnection(CapacitorSQLite);
+let nativeDb = null;
+const nativeDbReady = initNativeDb();
+
+async function initNativeDb(){
+  if(!Capacitor.isNativePlatform()) return;
+  try{
+    nativeDb = await sqlite.createConnection("alburhan", false, "no-encryption", 1, false);
+    await nativeDb.open();
+    await nativeDb.execute("CREATE TABLE IF NOT EXISTS app_state (id INTEGER PRIMARY KEY, data TEXT NOT NULL, updated_at TEXT NOT NULL)");
+  }catch(e){
+    nativeDb = null;
+    console.warn("Native database unavailable; using browser storage.", e);
+  }
+}
 
 const DAY_MS = 86400000;
 const STORE_KEY = "alburhan_maamulaat_v1";      // keep v1 key so earlier data carries over
@@ -689,7 +710,7 @@ const STR = {
     notes:"احوال / یادداشت", notesPh:"آج کا احوال، کیفیات، خاص باتیں...",
     copyBtn:"آج کی کارکردگی کاپی کریں", copyHint:"سادہ متن میں کاپی — کسی کو بھی بھیج سکتے ہیں۔",
     reset:"اس دن کو ری سیٹ کریں", futureDate:"مستقبل کی تاریخ نہیں", dayReset:"دن ری سیٹ ہو گیا",
-    copied:"احوال کلپ بورڈ پر کاپی ہو گیا", saved:"محفوظ ہو گیا",
+    copied:"احوال کلپ بورڈ پر کاپی ہو گیا", copyFailed:"خودکار کاپی نہیں ہو سکی۔ براہ کرم ڈائیلاگ سے متن کاپی کریں۔", saved:"محفوظ ہو گیا",
     anaEntryT:"کارکردگی کا تجزیہ", anaEntryS:"روزانہ · ہفتہ · ماہانہ · چلہ · سالانہ",
     navToday:"آج", navCal:"کیلنڈر", navAna:"تجزیہ", navChilla:"چلہ", navSet:"ترتیبات",
     anaTitle:"تجزیہ منتخب کریں", back:"واپس",
@@ -718,7 +739,7 @@ const STR = {
     pinPrompt:"نیا 4 ہندسوں کا پن درج کریں:", pinBad:"4 ہندسے درکار ہیں", pinDone:"پن سیٹ ہو گیا", pinRemoved:"پن ہٹا دیا گیا",
     pinEnter:"پن درج کریں", pinWrong:"غلط پن",
     bkTitle:"بیک اپ", bkSub:"اپنا سارا ڈیٹا فائل میں محفوظ کریں یا واپس لائیں۔ ڈیٹا صرف اسی ڈیوائس پر رہتا ہے۔",
-    exp:"ایکسپورٹ", imp:"امپورٹ", copyJson:"کلپ بورڈ پر کاپی کریں",
+    exp:"ایکسپورٹ", imp:"امپورٹ", copyJson:"کلپ بورڈ پر کاپی کریں", copyFailed:"خودکار کاپی نہیں ہو سکی۔ براہ کرم ڈائیلاگ سے متن کاپی کریں۔",
     bkReplace:"موجودہ ڈیٹا کی جگہ یہ بیک اپ لوڈ کیا جائے؟", bkBad:"فائل درست نہیں", bkLoaded:"بیک اپ لوڈ ہو گیا",
     bkMade:"بیک اپ فائل بن گئی", dataCopied:"ڈیٹا کاپی ہو گیا", previewNote:"نوٹ: یہ پیش نظارہ محفوظ نہیں کرتا۔ فون پر فائل کھولنے پر ڈیٹا محفوظ رہے گا۔",
     resetTitle:"ری سیٹ", wipe:"سارا ڈیٹا مٹا دیں", wipe1:"تمام معمولات، تجزیہ اور ترتیبات ہمیشہ کے لیے مٹ جائیں گی۔ کیا یقین ہے؟",
@@ -735,7 +756,7 @@ const STR = {
     notes:"Notes / Ahwaal", notesPh:"Today's state, reflections, notable things...",
     copyBtn:"Copy today's performance", copyHint:"Copied as plain text — you can share it with anyone.",
     reset:"Reset this day", futureDate:"Future date not allowed", dayReset:"Day reset",
-    copied:"Report copied to clipboard", saved:"Saved",
+    copied:"Report copied to clipboard", copyFailed:"Could not copy automatically. Please copy the text from the dialog.", saved:"Saved",
     anaEntryT:"Performance Analysis", anaEntryS:"Day · Week · Month · Chilla · Year",
     navToday:"Today", navCal:"Calendar", navAna:"Analysis", navChilla:"Chilla", navSet:"Settings",
     anaTitle:"Choose an analysis", back:"Back",
@@ -764,7 +785,7 @@ const STR = {
     pinPrompt:"Enter a new 4-digit PIN:", pinBad:"4 digits required", pinDone:"PIN set", pinRemoved:"PIN removed",
     pinEnter:"Enter PIN", pinWrong:"Wrong PIN",
     bkTitle:"Backup", bkSub:"Save all your data to a file or restore it. Data stays only on this device.",
-    exp:"Export", imp:"Import", copyJson:"Copy data to clipboard",
+    exp:"Export", imp:"Import", copyJson:"Copy data to clipboard", copyFailed:"Could not copy automatically. Please copy the text from the dialog.",
     bkReplace:"Replace current data with this backup?", bkBad:"File is not valid", bkLoaded:"Backup loaded",
     bkMade:"Backup file created", dataCopied:"Data copied", previewNote:"Note: this preview can't save. Data will persist when you open the file on your phone.",
     resetTitle:"Reset", wipe:"Erase all data", wipe1:"All ma'amulat, analysis and settings will be erased forever. Are you sure?",
@@ -778,7 +799,7 @@ const STR = {
 };
 
 /* ---------- State ---------- */
-let state = load();
+let state = await load();
 let LANG = state.settings.lang || "ur";
 let selDate = todayKey();
 let calMonth = firstOfMonth(new Date());
@@ -789,7 +810,15 @@ let toastT = null, saveWarned = false;
 function T(k){ return (STR[LANG] && STR[LANG][k] != null) ? STR[LANG][k] : (STR.ur[k] ?? k); }
 function L(obj){ return typeof obj === "string" ? obj : (obj[LANG] || obj.ur || obj.en || ""); }
 
-function load(){
+async function load(){
+  await nativeDbReady;
+  if(nativeDb){
+    try{
+      const result = await nativeDb.query("SELECT data FROM app_state WHERE id = 1");
+      const row = result.values && result.values[0];
+      if(row && row.data) return normalize(JSON.parse(row.data));
+    }catch(e){ console.warn("Could not read native database.", e); }
+  }
   try{ const raw = localStorage.getItem(STORE_KEY); if(raw) return normalize(JSON.parse(raw)); }catch(e){}
   return normalize({});
 }
@@ -803,9 +832,15 @@ function normalize(p){
   p.tasbeeh = Object.assign({ dhikr:"sub", target:33, count:0, rounds:0, total:0 }, p.tasbeeh||{});
   return p;
 }
-function save(){
-  try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
+async function save(){
+  const data = JSON.stringify(state);
+  try{ localStorage.setItem(STORE_KEY, data); }
   catch(e){ if(!saveWarned){ saveWarned = true; toast(T("previewNote")); } }
+  if(nativeDb){
+    try{
+      await nativeDb.run("INSERT OR REPLACE INTO app_state (id, data, updated_at) VALUES (1, ?, ?)", [data, new Date().toISOString()]);
+    }catch(e){ if(!saveWarned){ saveWarned = true; toast(T("previewNote")); } }
+  }
 }
 
 /* ---------- Dates ---------- */
@@ -1111,15 +1146,31 @@ document.getElementById("resetDayBtn").addEventListener("click",()=>{
 document.getElementById("anaEntry").addEventListener("click",()=>{ anaMode=null; switchView("ana"); });
 document.getElementById("copyDayBtn").addEventListener("click",()=>{
   const text = buildReport();
-  if(navigator.clipboard && navigator.clipboard.writeText){
-    navigator.clipboard.writeText(text).then(()=>toast(T("copied")), ()=>fallbackCopy(text));
-  } else fallbackCopy(text);
+  copyText(text).then(copied=>toast(copied?T("copied"):T("copyFailed")));
 });
+async function copyText(text){
+  try{ await Clipboard.write({string:text}); return true; }catch(e){}
+  try{
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      await navigator.clipboard.writeText(text); return true;
+    }
+  }catch(e){}
+  return fallbackCopy(text);
+}
 function fallbackCopy(text){
   const ta=document.createElement("textarea"); ta.value=text;
-  ta.style.position="fixed"; ta.style.opacity="0"; document.body.appendChild(ta); ta.select();
-  try{ document.execCommand("copy"); toast(T("copied")); }catch(e){ prompt("Copy:", text); }
+  ta.setAttribute("readonly","");
+  ta.style.position="fixed"; ta.style.inset="0"; ta.style.width="1px"; ta.style.height="1px";
+  ta.style.opacity=".01"; ta.style.pointerEvents="none"; ta.style.userSelect="text";
+  document.body.appendChild(ta); ta.focus(); ta.select(); ta.setSelectionRange(0,ta.value.length);
+  let copied=false;
+  try{
+    copied=document.execCommand("copy");
+  }catch(e){}
   ta.remove();
+  if(copied) return true;
+  prompt("Copy:", text);
+  return false;
 }
 function buildReport(){
   const isU = LANG==="ur";
@@ -1462,8 +1513,7 @@ document.getElementById("impFile").addEventListener("change",e=>{
 });
 document.getElementById("copyJsonBtn").addEventListener("click",()=>{
   const s=JSON.stringify(state);
-  if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(s).then(()=>toast(T("dataCopied")),()=>prompt("Copy:",s));
-  else prompt("Copy:",s);
+  copyText(s).then(copied=>toast(copied?T("dataCopied"):T("copyFailed")));
 });
 document.getElementById("wipeBtn").addEventListener("click",()=>{
   if(!confirm(T("wipe1"))) return;
@@ -1547,7 +1597,7 @@ Object.assign(STR.ur,{
   tsbUndo:"ایک کم", tsbReset:"کاؤنٹر ری سیٹ", tsbResetQ:"کاؤنٹر صفر کر دیا جائے؟",
   tsbDone:"ماشاءاللہ! ہدف مکمل ہو گیا", tsbHint:"گننے کے لیے دائرے پر ٹیپ کریں",
   setRemT:"روزانہ معمولات کی یاددہانی",
-  setRemS:"مقررہ اوقات پر معمولات پورے کرنے کی یاددہانی ملے گی۔ یاددہانی تب آتی ہے جب ایپ کھلی ہو یا بیک گراؤنڈ میں چل رہی ہو۔",
+  setRemS:"مقررہ اوقات پر معمولات پورے کرنے کی یاددہانی ملے گی، چاہے ایپ بند ہو۔",
   remOn:"یاددہانی فعال", remAdd:"شامل", remDel:"حذف", remNone:"کوئی وقت مقرر نہیں",
   remPerm:"نوٹیفکیشن کی اجازت", remTest:"ٹیسٹ یاددہانی",
   remPermOk:"سسٹم نوٹیفکیشن کی اجازت مل چکی ہے۔",
@@ -1564,7 +1614,7 @@ Object.assign(STR.en,{
   tsbUndo:"Undo −1", tsbReset:"Reset counter", tsbResetQ:"Reset the counter to zero?",
   tsbDone:"MashaAllah! Target completed", tsbHint:"Tap the circle to count",
   setRemT:"Daily ma'amulaat reminder",
-  setRemS:"Get a reminder at your chosen times to complete your ma'amulaat. Reminders arrive while the app is open or running in the background.",
+  setRemS:"Get a reminder at your chosen times, even when the app is closed.",
   remOn:"Reminder on", remAdd:"Add", remDel:"Delete", remNone:"No time set",
   remPerm:"Allow notifications", remTest:"Test reminder",
   remPermOk:"System notifications are allowed.",
@@ -1654,12 +1704,60 @@ function fmtTime(t){
 }
 function notifPerm(){ try{ return ("Notification" in window) ? Notification.permission : "na"; }catch(e){ return "na"; } }
 function askNotifPerm(){
+  if(Capacitor.isNativePlatform()){
+    syncNativeReminders();
+    return;
+  }
   try{
     if("Notification" in window && Notification.permission==="default"){
       const r=Notification.requestPermission(()=>renderReminders());
       if(r && r.then) r.then(()=>renderReminders()).catch(()=>{});
     }
   }catch(e){}
+}
+function nativeReminderId(time){
+  const [hour,minute] = time.split(":").map(Number);
+  return 20000 + hour * 60 + minute;
+}
+let nativeReminderSync=Promise.resolve();
+function syncNativeReminders(){
+  nativeReminderSync=nativeReminderSync.then(async()=>{
+    if(!Capacitor.isNativePlatform()) return;
+    const R=state.settings.reminders;
+    try{
+      const ids=Array.from({length:1440},(_,minute)=>({id:20000+minute}));
+      await LocalNotifications.cancel({notifications:ids});
+      if(!R.enabled || !R.times.length) return;
+      const permission=await LocalNotifications.requestPermissions();
+      if(permission.display!=="granted") return;
+      if(Capacitor.getPlatform()==="android"){
+        await LocalNotifications.createChannel({
+          id:"maamulaat-reminders",
+          name:"Ma'amulaat reminders",
+          description:"Daily reminders for your ma'amulaat",
+          importance:4,
+          visibility:1,
+          vibration:true
+        });
+        const exact=await LocalNotifications.checkExactNotificationSetting();
+        if(exact.exact_alarm==="prompt") await LocalNotifications.changeExactNotificationSetting();
+      }
+      await LocalNotifications.schedule({notifications:R.times.map(time=>({
+        id:nativeReminderId(time),
+        title:T("brand"),
+        body:T("remBody"),
+        channelId:"maamulaat-reminders",
+        schedule:{at:nextReminderDate(time), repeats:true, every:"day", allowWhileIdle:true}
+      }))});
+    }catch(e){ console.warn("Native reminders unavailable.", e); }
+  });
+  return nativeReminderSync;
+}
+function nextReminderDate(time){
+  const [hour,minute]=time.split(":").map(Number);
+  const date=new Date(); date.setHours(hour,minute,0,0);
+  if(date<=new Date()) date.setDate(date.getDate()+1);
+  return date;
 }
 function markPassed(R,times){           // times already gone today must not fire the moment they are added
   const now=new Date(), nowM=now.getHours()*60+now.getMinutes(), tk=todayKey();
@@ -1674,7 +1772,7 @@ function renderReminders(){
   [...R.times].sort().forEach(t=>{
     const r=document.createElement("div"); r.className="kv";
     r.innerHTML=`<span class="num">🔔 ${fmtTime(t)}</span><button class="btn danger sm">${T("remDel")}</button>`;
-    r.querySelector("button").addEventListener("click",()=>{ R.times=R.times.filter(x=>x!==t); save(); renderReminders(); toast(T("remSet")); });
+    r.querySelector("button").addEventListener("click",()=>{ R.times=R.times.filter(x=>x!==t); save(); syncNativeReminders(); renderReminders(); toast(T("remSet")); });
     list.appendChild(r);
   });
   const perm=notifPerm();
@@ -1687,6 +1785,7 @@ document.getElementById("remSwitch").addEventListener("click",()=>{
   if(R.enabled){ if(!R.times.length) R.times.push("21:00"); markPassed(R,R.times); }
   save(); renderReminders(); toast(R.enabled?T("remOnToast"):T("remOffToast"));
   if(R.enabled) askNotifPerm();
+  else syncNativeReminders();
 });
 document.getElementById("remAdd").addEventListener("click",()=>{
   const v=document.getElementById("remTime").value;
